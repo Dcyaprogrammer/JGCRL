@@ -66,28 +66,7 @@ class BraxGymnaxWrapper:
         return self._env._get_obs(state.pipeline_state)
     
     def _parse_task_params(self, env_name, env_kwargs):
-
-        task_kwargs = {}
-
-        if env_name.startswith('walker'):
-            if env_name == 'walker':
-                task_kwargs = {'move_speed': 1.0, 'forward': True, 'flip': False}
-            elif env_name == 'walker-stand':
-                task_kwargs = {'move_speed': 0.0, 'forward': True, 'flip': False}
-            elif env_name == 'walker-walk':
-                task_kwargs = {'move_speed': 1.0, 'forward': True, 'flip': False}
-            elif env_name == 'walker-run':
-                task_kwargs = {'move_speed': 8.0, 'forward': True, 'flip': False}
-            elif env_name == 'walker-flip':
-                task_kwargs = {'move_speed': 0.0, 'forward': True, 'flip': True}
-            elif env_name == 'walker-backward':
-                task_kwargs = {'move_speed': 1.0, 'forward': False, 'flip': False}
-            
-            task_kwargs.update(env_kwargs)
-            return {'env_name': 'walker', 'kwargs': task_kwargs}
-        
-        return {'env_name': env_name, 'kwargs': env_kwargs}
-
+        pass
 
 
 class CustomRolloutWrapper:
@@ -241,3 +220,22 @@ class CustomRolloutWrapper:
             # Return the sum of rewards accumulated by agent in episode rollout
             next_obs, next_state,rng,  cum_return,  new_valid_mask = carry_out
             return cum_return
+
+# for HER
+class TrajectoryIdWrapper(Wrapper):
+    def __init__(self, env: PipelineEnv):
+        super().__init__(env)
+
+    def reset(self, rng: jax.Array) -> State:
+        state = self.env.reset(rng)
+        state.info["traj_id"] = jnp.zeros(rng.shape[:-1])
+        return state
+
+    def step(self, state: State, action: jax.Array) -> State:
+        if "steps" in state.info.keys():
+            traj_id = state.info["traj_id"] + jnp.where(state.info["steps"], 0, 1)
+        else:
+            traj_id = state.info["traj_id"]
+        state = self.env.step(state, action)
+        state.info["traj_id"] = traj_id
+        return state
