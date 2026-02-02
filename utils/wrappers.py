@@ -110,7 +110,7 @@ class CustomRolloutWrapper:
             self.env = env_or_name
             self.env_params = env_or_name.default_params
         # brax walker multi-task support
-        elif env_or_name.startswith('walker'):
+        elif env_or_name.startswith('walker') or env_or_name.startswith('ant'):
             self.env = BraxGymnaxWrapper(env_or_name, backend='positional', **env_kwargs)
             self.env_params = gymnax.environments.environment.EnvParams(max_steps_in_episode=1000)
         # mjx environment support - check if it's a registry name or custom format
